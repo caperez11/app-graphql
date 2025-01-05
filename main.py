@@ -5,15 +5,18 @@ from fastapi import FastAPI, Depends
 from sqlmodel import Session
 from strawberry.fastapi import GraphQLRouter
 
+from app.api.graphql.custom_graphql_context import CustomGraphQLContext
 from app.api.graphql.query import Query
 from app.core.db import init_db, get_session, engine
 
 from app.models.user import User
+from app.services.user import UserService
 
 app = FastAPI()
 
 # Inicializar la base de datos al iniciar la aplicación
 init_db()
+
 
 schema = strawberry.Schema(query=Query)
 graphql_app = GraphQLRouter(schema)
@@ -30,8 +33,10 @@ async def root(session: Session = Depends(get_session)):
     return {"message": "User created", "user": new_user.dict()}
 
 
-@app.get("/hello/{name}")
-async def say_hello(name: str):
-    return {"message": f"Hello {name}"}
+@app.get("/users")
+async def get_all_users(service: UserService = Depends(UserService)):
+    """RUTA: Obtiene todos los usuarios."""
+    users = await service.get_users()  # Obtiene los usuarios desde el servicio
+    return {"users": users}
 
 
